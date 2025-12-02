@@ -1,0 +1,107 @@
+#!/bin/bash
+
+# Add current directory to PATH
+# This script adds the current working directory to your PATH environment variable
+
+# Get the current directory
+CURRENT_DIR=$(pwd)
+
+# Detect the shell being used
+SHELL_NAME=$(basename "$SHELL")
+
+# Function to add to PATH for current session
+add_to_current_session() {
+    if [[ ":$PATH:" != *":$CURRENT_DIR:"* ]]; then
+        export PATH="$CURRENT_DIR:$PATH"
+        echo -e "\033[0;32m[✓]\033[0m Added to PATH for current session: $CURRENT_DIR"
+        echo -e "\033[0;34m[i]\033[0m Current PATH: $PATH"
+    else
+        echo -e "\033[1;33m[!]\033[0m Directory already in PATH: $CURRENT_DIR"
+    fi
+}
+
+# Function to add permanently to shell config
+add_permanently() {
+    local config_file=""
+    
+    case "$SHELL_NAME" in
+        bash)
+            if [ -f "$HOME/.bashrc" ]; then
+                config_file="$HOME/.bashrc"
+            elif [ -f "$HOME/.bash_profile" ]; then
+                config_file="$HOME/.bash_profile"
+            else
+                config_file="$HOME/.bashrc"
+            fi
+            ;;
+        zsh)
+            config_file="$HOME/.zshrc"
+            ;;
+        fish)
+            config_file="$HOME/.config/fish/config.fish"
+            ;;
+        *)
+            echo -e "\033[0;31m[✗]\033[0m Unsupported shell: $SHELL_NAME"
+            return 1
+            ;;
+    esac
+    
+    # Check if already in config file
+    if [ -f "$config_file" ] && grep -q "export PATH=\"$CURRENT_DIR:\$PATH\"" "$config_file"; then
+        echo -e "\033[1;33m[!]\033[0m Already permanently added to $config_file"
+        return 0
+    fi
+    
+    # Add to config file
+    echo "" >> "$config_file"
+    echo "# Added by addpath script on $(date)" >> "$config_file"
+    echo "export PATH=\"$CURRENT_DIR:\$PATH\"" >> "$config_file"
+    
+    echo -e "\033[0;32m[✓]\033[0m Permanently added to $config_file"
+    echo -e "\033[0;34m[i]\033[0m Restart your shell or run: source $config_file"
+}
+
+# Main script
+echo "========================================="
+echo "  Add Current Directory to PATH"
+echo "========================================="
+echo ""
+echo "Current directory: $CURRENT_DIR"
+echo "Current shell: $SHELL_NAME"
+echo ""
+
+# Check for flags
+case "${1:-}" in
+    -p|--permanent)
+        add_to_current_session
+        echo ""
+        add_permanently
+        ;;
+    -h|--help)
+        cat << EOF
+Usage: addpath [OPTIONS]
+
+Adds the current directory to your PATH environment variable.
+
+Options:
+    (none)              Add to PATH for current session only
+    -p, --permanent     Add to PATH permanently (updates shell config)
+    -h, --help          Show this help message
+
+Examples:
+    addpath                    # Add to current session
+    addpath --permanent        # Add permanently
+    source addpath             # Add to current shell (recommended)
+
+Note: When running without 'source', the PATH change only affects child processes.
+      Use 'source addpath' or '. addpath' to modify your current shell's PATH.
+
+EOF
+        ;;
+    *)
+        add_to_current_session
+        echo ""
+        echo -e "\033[0;34m[i]\033[0m To make this permanent, run: addpath --permanent"
+        echo -e "\033[0;34m[i]\033[0m Or run this script with 'source': source addpath"
+        ;;
+esac
