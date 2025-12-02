@@ -2,8 +2,7 @@
 add a path to the linux PATH
 
 # Installation
-sudo cp addpath /usr/local/bin/
-sudo chmod +x /usr/local/bin/addpath
+sudo cp addpath /usr/local/bin/; sudo chmod +x /usr/local/bin/addpath
 
 # Add current directory to PATH (current session only)
 ./addpath
